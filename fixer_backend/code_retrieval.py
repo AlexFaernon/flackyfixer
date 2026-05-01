@@ -32,5 +32,3 @@ class GitHubCodeRetriever:
         content_bytes = base64.b64decode(content_base64)
 
         return content_bytes.decode("utf-8")
-
-print(code)

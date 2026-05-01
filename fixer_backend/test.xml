@@ -6,7 +6,7 @@
     <testcase classname="tests.test_login" name="test_invalid_login" time="0.145">
         <failure message="AssertionError">
             Traceback (most recent call last):
-              File "tests/test_login.py", line 25, in test_invalid_login
+              File "fixer_backend/tests/test_login.py", line 25, in test_invalid_login
                 assert response.status_code == 401
             AssertionError: 200 != 401
         </failure>
@@ -15,7 +15,7 @@
     <testcase classname="tests.test_payment" name="test_payment_processing" time="0.567">
         <error message="TimeoutException">
             Traceback (most recent call last):
-              File "tests/test_payment.py", line 42, in test_payment_processing
+              File "fixer_backend/tests/test_payment.py", line 42, in test_payment_processing
                 wait_for_payment()
             TimeoutException: Payment service did not respond
         </error>
@@ -24,7 +24,7 @@
     <testcase classname="tests.test_profile" name="test_update_profile" time="0.321">
         <failure message="ElementNotFound">
             Traceback (most recent call last):
-              File "tests/test_profile.py", line 30, in test_update_profile
+              File "fixer_backend/tests/test_profile.py", line 30, in test_update_profile
                 driver.find_element(...)
             selenium.common.exceptions.NoSuchElementException: element not found
         </failure>
