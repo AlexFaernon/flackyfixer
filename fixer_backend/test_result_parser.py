@@ -47,5 +47,5 @@ def parse_xml(file) -> list[ParsedTest]:
     return tests
 
 def extract_file_name_from_stacktrace(stacktrace: str) -> str | None:
-    match = re.search(r'File "(.+?)"', stacktrace)
-    return match.group(1) if match else None
+    matches = re.findall(r'File "(.+?)"', stacktrace)
+    return matches[-1] if matches else None

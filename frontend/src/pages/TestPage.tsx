@@ -106,7 +106,7 @@ export default function TestPage({
             {/* кнопка */}
             <div className="block">
                 <button className="button" onClick={analyze} disabled={loading}>
-                    {loading ? "Analyzing..." : "Analyze"}
+                    {loading ? "Анализирую..." : "Анализ"}
                 </button>
             </div>
 
@@ -133,7 +133,7 @@ export default function TestPage({
                     className="button"
                     onClick={() => setShowHistory(!showHistory)}
                 >
-                    {showHistory ? "Hide history" : "Show history"}
+                    {showHistory ? "Скрыть историю" : "Показать историю"}
                 </button>
 
                 {showHistory && (

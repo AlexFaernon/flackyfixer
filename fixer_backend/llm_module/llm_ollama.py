@@ -3,10 +3,12 @@ import json
 from openai import OpenAI
 from .llm_base import BaseLLM
 
-class OpenAILLM(BaseLLM):
-
-    def __init__(self, api_key: str, model: str = "gpt-4o-mini"):
-        self.client = OpenAI(api_key=api_key)
+class LocalLLM(BaseLLM):
+    def __init__(self, model: str = "llama3"):
+        self.client = OpenAI(
+            base_url="http://localhost:11434/v1",
+            api_key="-"
+        )
         self.model = model
 
     def generate(self, stacktrace: str, code: str) -> dict:
@@ -15,7 +17,9 @@ class OpenAILLM(BaseLLM):
             model=self.model,
             messages=[
                 {"role": "user", "content": format_prompt}
-            ]
+            ],
+            temperature=0.2
         )
+
         json_response = json.loads(response.choices[0].message.content)
         return json_response

@@ -3,21 +3,18 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-import uuid
 
 from code_retrieval import GitHubCodeRetriever
 from test_result_parser import parse_xml, extract_file_name_from_stacktrace
-from config import github_key, open_ai_key
-from llm_module.llm_openai import OpenAILLM
+from config import github_key, github_owner, github_repo
 from db import Base, engine, get_db
+from llm_factory import get_llm
 import db_commands
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # startup
     Base.metadata.create_all(bind=engine)
     yield
-    # shutdown (если нужно что-то закрыть)
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
@@ -29,15 +26,14 @@ app.add_middleware(
 )
 
 github_code_retriever = GitHubCodeRetriever(
-    owner="AlexFaernon",
-    repo="flackyfixer",
+    owner=github_owner,
+    repo=github_repo,
     token=github_key
 )
-openai = OpenAILLM(open_ai_key)
 
-# -----------------------------
-# 1. Загрузка XML отчёта
-# -----------------------------
+llm_provider = get_llm()
+
+
 @app.post("/reports")
 async def upload_report(name: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
     parsed_tests = parse_xml(file)
@@ -56,9 +52,6 @@ def delete_report(report_id: str, db: Session = Depends(get_db)):
     return {"status": "deleted"}
 
 
-# -----------------------------
-# 2. Список всех отчётов
-# -----------------------------
 @app.get("/reports")
 def get_reports(db: Session = Depends(get_db)):
     reports = db_commands.get_reports(db)
@@ -70,9 +63,7 @@ def get_reports(db: Session = Depends(get_db)):
         for r in reports
     ]
 
-# -----------------------------
-# 3. Список тестов в отчёте
-# -----------------------------
+
 @app.get("/reports/{report_id}/tests")
 def get_tests(report_id: str, db: Session = Depends(get_db)):
     tests = db_commands.get_tests_in_report(report_id, db)
@@ -88,9 +79,6 @@ def get_tests(report_id: str, db: Session = Depends(get_db)):
     }
 
 
-# -----------------------------
-# 4. Конкретный тест
-# -----------------------------
 @app.get("/reports/{report_id}/tests/{test_id}")
 def get_test(report_id: str, test_id: str, db: Session = Depends(get_db)):
     test = db_commands.get_test(report_id, test_id, db)
@@ -109,9 +97,6 @@ def get_code(report_id: str, test_id: str, db: Session = Depends(get_db)):
     return get_test_code(test)
 
 
-# -----------------------------
-# 5. Анализ теста (LLM)
-# -----------------------------
 @app.post("/reports/{report_id}/tests/{test_id}/analyze")
 def analyze_test(report_id: str, test_id: str, db: Session = Depends(get_db)):
     test = db_commands.get_test(report_id, test_id, db)
@@ -120,7 +105,7 @@ def analyze_test(report_id: str, test_id: str, db: Session = Depends(get_db)):
 
     stacktrace = test.stacktrace
     code = get_test_code(test)
-    response = openai.generate(stacktrace, code)
+    response = llm_provider.generate(stacktrace, code)
     db_commands.save_analysis(db, test_id, report_id, response)
     return {
         "analysis": {
