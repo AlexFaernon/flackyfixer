@@ -14,17 +14,20 @@ export default function TestPage({
     reportId: string;
     testId: string;
 }) {
+    const API_URL = import.meta.env.VITE_API_URL;
+
     const [test, setTest] = useState<Test | null>(null);
     const [code, setCode] = useState<string>("");
     const [analysis, setAnalysis] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [analyses, setAnalyses] = useState<any[]>([]);
     const [showHistory, setShowHistory] = useState(false);
+    const [additionalContext, setAdditionalContext] = useState("");
 
     // загрузка теста
     const fetchTest = async () => {
         const res = await fetch(
-            `http://localhost:8000/reports/${reportId}/tests/${testId}`
+            `${API_URL}/reports/${reportId}/tests/${testId}`
         );
         const data = await res.json();
         setTest({ id: testId, ...data });
@@ -33,7 +36,7 @@ export default function TestPage({
     // загрузка кода
     const fetchCode = async () => {
         const res = await fetch(
-            `http://localhost:8000/reports/${reportId}/tests/${testId}/code`
+            `${API_URL}/reports/${reportId}/tests/${testId}/code`
         );
         const data = await res.json();
         setCode(data || "");
@@ -50,9 +53,18 @@ export default function TestPage({
         setLoading(true);
 
         const res = await fetch(
-            `http://localhost:8000/reports/${reportId}/tests/${testId}/analyze`,
+            `${API_URL}/reports/${reportId}/tests/${testId}/analyze`,
             {
                 method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                },
+
+                body: JSON.stringify({
+                    additional_context:
+                    additionalContext,
+                }),
             }
         );
 
@@ -65,7 +77,7 @@ export default function TestPage({
 
     const fetchAnalyses = async () => {
         const res = await fetch(
-            `http://localhost:8000/reports/${reportId}/tests/${testId}/analyses`
+            `${API_URL}/reports/${reportId}/tests/${testId}/analyses`
         );
         const data = await res.json();
         setAnalyses(data);
@@ -76,52 +88,56 @@ export default function TestPage({
         }
     };
 
-    if (!test) return <div className="container">Loading...</div>;
+    if (!test) return <div className="container">Загрузка...</div>;
 
     return (
         <div className="container">
             <div className="header">{test.name}</div>
 
-            {/* статус */}
-            <div className="block">
-        <span className={`status ${test.status}`}>
-          {test.status}
-        </span>
-            </div>
+            <div className="test-toolbar">
 
-            {/* stacktrace */}
-            {test.stacktrace && (
-                <div className="block">
-                    <h3>Error</h3>
-                    <div className="stacktrace">{test.stacktrace}</div>
-                </div>
-            )}
+                <span className={`status status-large ${test.status}`}>
+                     {test.status}
+                </span>
 
-            {/* код */}
-            <div className="block">
-                <h3>Test code</h3>
-                <div className="code">{code}</div>
-            </div>
-
-            {/* кнопка */}
-            <div className="block">
-                <button className="button" onClick={analyze} disabled={loading}>
-                    {loading ? "Анализирую..." : "Анализ"}
+                <button
+                    className="button"
+                    onClick={analyze}
+                    disabled={loading}
+                >
+                    {loading ? "Анализирую..." : "Запустить анализ"}
                 </button>
+
+            </div>
+
+            <div className="block">
+                <h3>Дополнительный контекст</h3>
+
+                <textarea
+                    className="textarea"
+                    rows={5}
+                    placeholder={
+                        "Необязательно. Например:\nТест падает только в CI\nОшибка появилась после обновления"
+                    }
+                    value={additionalContext}
+                    onChange={(e) =>
+                        setAdditionalContext(e.target.value)
+                    }
+                />
             </div>
 
             {/* результат */}
             {analysis && (
                 <div className="block analysis">
-                    <h3>Analysis</h3>
+                    <h3>Результат анализа</h3>
 
-                    <p><b>Root cause:</b> {analysis.root_cause}</p>
-                    <p><b>Failure type:</b> {analysis.failure_type}</p>
-                    <p><b>Suggested fix:</b> {analysis.suggested_fix}</p>
+                    <p><b>Причина ошибки:</b> {analysis.root_cause}</p>
+                    <p><b>Тип ошибки:</b> {analysis.failure_type}</p>
+                    <p><b>Предлагаемое решение:</b> {analysis.suggested_fix}</p>
 
                     {analysis.example && (
                         <>
-                            <h4>Example fix</h4>
+                            <h4>Пример решения</h4>
                             <div className="code">{analysis.example}</div>
                         </>
                     )}
@@ -145,14 +161,57 @@ export default function TestPage({
                                 style={{ marginBottom: 10 }}
                                 onClick={() => setAnalysis(a.analysis)}
                             >
-                                <div style={{ fontSize: 12, color: "#666" }}>
+                                <div
+                                    style={{
+                                        fontSize: 12,
+                                        color: "#666",
+                                        marginBottom: 10,
+                                    }}
+                                >
                                     {new Date(a.created_at).toLocaleString()}
                                 </div>
-                                <div>{a.analysis.root_cause}</div>
+
+                                <p>
+                                    <b>Причина ошибки:</b>{" "}
+                                    {a.analysis.root_cause}
+                                </p>
+
+                                <p>
+                                    <b>Тип ошибки:</b>{" "}
+                                    {a.analysis.failure_type}
+                                </p>
+
+                                <p>
+                                    <b>Предлагаемое решение:</b>{" "}
+                                    {a.analysis.suggested_fix}
+                                </p>
+
+                                {a.analysis.example && (
+                                    <>
+                                        <h4>Пример решения</h4>
+                                        <div className="code">
+                                            {a.analysis.example}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         ))}
                     </div>
                 )}
+            </div>
+
+            {/* stacktrace */}
+            {test.stacktrace && (
+                <div className="block">
+                    <h3>Stacktrace</h3>
+                    <div className="stacktrace">{test.stacktrace}</div>
+                </div>
+            )}
+
+            {/* код */}
+            <div className="block">
+                <h3>Код теста</h3>
+                <div className="code">{code}</div>
             </div>
         </div>
     );

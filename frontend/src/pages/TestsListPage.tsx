@@ -7,20 +7,27 @@ type Test = {
 };
 
 export default function TestsListPage({ reportId }: { reportId: string }) {
+    const API_URL = import.meta.env.VITE_API_URL;
+
     const [tests, setTests] = useState<Test[]>([]);
+    const [reportName, setReportName] = useState("");
     const [filter, setFilter] = useState("all");
+    const [search, setSearch] = useState("");
 
     const fetchTests = async () => {
         const res = await fetch(
-            `http://localhost:8000/reports/${reportId}/tests`
+            `${API_URL}/reports/${reportId}/tests`
         );
         const data = await res.json();
 
-        // превращаем объект в массив
-        const testsArray = Object.entries(data).map(([id, value]: any) => ({
-            id,
-            ...value,
-        }));
+        setReportName(data.report_name);
+
+        const testsArray = Object.entries(data.tests).map(
+            ([id, value]: any) => ({
+                id,
+                ...value,
+            })
+        );
 
         setTests(testsArray);
     };
@@ -29,17 +36,27 @@ export default function TestsListPage({ reportId }: { reportId: string }) {
         fetchTests();
     }, []);
 
-    const filteredTests =
-        filter === "all"
-            ? tests
-            : tests.filter((t) => t.status === filter);
+    const filteredTests = tests.filter((t) => {
+        const statusMatch =
+            filter === "all" || t.status === filter;
+
+        const nameMatch =
+            t.name
+                .toLowerCase()
+                .includes(search.toLowerCase());
+
+        return statusMatch && nameMatch;
+    });
 
     return (
         <div className="container">
-            <div className="header">Tests</div>
+            <div className="header">
+                {reportName
+                    ? `Отчет ${reportName}`
+                    : "Тесты"}
+            </div>
 
-            {/* Filters */}
-            <div className="card">
+            <div className="test-toolbar">
                 <button className="button" onClick={() => setFilter("all")}>
                     All
                 </button>
@@ -55,14 +72,25 @@ export default function TestsListPage({ reportId }: { reportId: string }) {
                 >
                     Passed
                 </button>
+                <button
+                    className="button"
+                    onClick={() => setFilter("error")}
+                >
+                    Error
+                </button>
+                <input
+                    className="input"
+                    type="text"
+                    placeholder="Поиск по названию теста"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
             </div>
-
-            {/* Table */}
             <table className="table">
                 <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Status</th>
+                    <th>Имя</th>
+                    <th>Статус</th>
                 </tr>
                 </thead>
                 <tbody>

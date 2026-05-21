@@ -1,5 +1,5 @@
 */.venv
 */.idea
-*/tests/__pycache__
-*/.env
-*/__pycache__
+./env
+**/.env
+**/__pycache__

@@ -6,12 +6,14 @@ type Report = {
 };
 
 export default function ReportsPage() {
+    const API_URL = import.meta.env.VITE_API_URL;
+
     const [file, setFile] = useState<File | null>(null);
     const [reports, setReports] = useState<Report[]>([]);
     const [name, setName] = useState("");
 
     const fetchReports = async () => {
-        const res = await fetch("http://localhost:8000/reports");
+        const res = await fetch(`${API_URL}/reports`);
         const data = await res.json();
         setReports(data);
     };
@@ -26,7 +28,7 @@ export default function ReportsPage() {
         const formData = new FormData();
         formData.append("file", file);
 
-        await fetch(`http://localhost:8000/reports?name=${name}`, {
+        await fetch(`${API_URL}/reports?name=${name}`, {
             method: "POST",
             body: formData,
         });
@@ -44,7 +46,7 @@ export default function ReportsPage() {
         if (!confirmed) return;
 
         const res = await fetch(
-            `http://localhost:8000/reports/${reportId}`,
+            `${API_URL}/reports/${reportId}`,
             {
                 method: "DELETE",
             }
@@ -61,9 +63,8 @@ export default function ReportsPage() {
         <div className="container">
             <div className="header">Flaky Fixer</div>
 
-            {/* Upload */}
             <div className="card">
-                <h3>Upload report</h3>
+                <h3>Загрузить отчет</h3>
 
                 <input
                     className="input"
@@ -79,11 +80,10 @@ export default function ReportsPage() {
                 />
 
                 <button className="button" onClick={handleUpload}>
-                    Upload
+                    Загрузить
                 </button>
             </div>
 
-            {/* Reports */}
             <div className="grid">
                 {reports.map((r) => (
                     <div
@@ -103,7 +103,6 @@ export default function ReportsPage() {
                             </div>
                         </div>
 
-                        {/* DELETE BUTTON */}
                         <button
                             onClick={(e) => {
                                 e.stopPropagation(); // чтобы не срабатывал переход

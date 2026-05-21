@@ -2,12 +2,10 @@ from abc import ABC, abstractmethod
 
 
 class BaseLLM(ABC):
-    __prompt = """
+    _prompt = """
 Ты опытный QA-инженер и backend-разработчик.
-
 Твоя задача — проанализировать падающий автоматизированный тест, определить наиболее вероятную причину ошибки и предложить способ её исправления.
-
-Внимательно изучи код теста и сообщение об ошибке.
+Внимательно изучи код теста и сообщение об ошибке и дополнительный контекст, если он присутствует.
 
 Код теста:
 ----------------
@@ -17,6 +15,11 @@ class BaseLLM(ABC):
 Ошибка (stacktrace):
 ----------------
 {stacktrace}
+----------------
+
+Дополнительный контекст:
+----------------
+{additional_context}
 ----------------
 
 Верни результат СТРОГО в формате JSON. 
@@ -37,5 +40,5 @@ class BaseLLM(ABC):
 - Если пример кода не нужен — верни пустую строку в поле example"""
 
     @abstractmethod
-    def generate(self, stacktrace: str, code: str) -> dict:
+    def generate(self, stacktrace: str, code: str, additional_context: str) -> dict:
         pass

@@ -102,6 +102,11 @@ body {
     color: #b91c1c;
 }
 
+.status.error {
+    background: #ababab;
+    color: #000000;
+}
+
 .status.passed {
     background: #dcfce7;
     color: #166534;
@@ -138,4 +143,62 @@ body {
 .analysis {
     background: #ecfeff;
     border: 1px solid #67e8f9;
+}
+
+.test-toolbar {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 20px;
+
+    flex-wrap: wrap;
+}
+
+.status-large {
+    font-size: 14px;
+
+    padding: 8px 14px;
+
+    font-weight: 600;
+}
+
+.button.secondary {
+    background: white;
+
+    color: #4f46e5;
+
+    border: 1px solid #d1d5db;
+}
+
+.button.secondary:hover {
+    background: #f8fafc;
+}
+
+.textarea {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    min-height: 120px;
+
+    resize: vertical;
+
+    padding: 12px;
+
+    border-radius: 8px;
+
+    border: 1px solid #d1d5db;
+
+    font-family: inherit;
+
+    font-size: 14px;
+}
+
+.textarea:focus {
+    outline: none;
+
+    border-color: #4f46e5;
 }

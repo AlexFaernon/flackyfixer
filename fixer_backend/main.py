@@ -9,6 +9,7 @@ from test_result_parser import parse_xml, extract_file_name_from_stacktrace
 from config import github_key, github_owner, github_repo
 from db import Base, engine, get_db
 from llm_factory import get_llm
+from pydantic_models import AnalyzeRequest
 import db_commands
 
 @asynccontextmanager
@@ -66,16 +67,21 @@ def get_reports(db: Session = Depends(get_db)):
 
 @app.get("/reports/{report_id}/tests")
 def get_tests(report_id: str, db: Session = Depends(get_db)):
+    report_name = db_commands.get_report_name(report_id, db)
     tests = db_commands.get_tests_in_report(report_id, db)
-
-    return {
-        t.external_id: {
+    tests_json = {
+        t.id: {
             "name": t.name,
             "classname": t.classname,
             "status": t.status,
             "stacktrace": t.stacktrace
         }
         for t in tests
+    }
+
+    return {
+        "report_name": report_name,
+        "tests": tests_json
     }
 
 
@@ -98,14 +104,14 @@ def get_code(report_id: str, test_id: str, db: Session = Depends(get_db)):
 
 
 @app.post("/reports/{report_id}/tests/{test_id}/analyze")
-def analyze_test(report_id: str, test_id: str, db: Session = Depends(get_db)):
+def analyze_test(report_id: str, test_id: str, request: AnalyzeRequest, db: Session = Depends(get_db)):
     test = db_commands.get_test(report_id, test_id, db)
     if not test:
-        raise HTTPException(status_code=404, detail="Report not found")
+        raise HTTPException(status_code=404, detail="Test not found")
 
     stacktrace = test.stacktrace
     code = get_test_code(test)
-    response = llm_provider.generate(stacktrace, code)
+    response = llm_provider.generate(stacktrace, code, request.additional_context)
     db_commands.save_analysis(db, test_id, report_id, response)
     return {
         "analysis": {
@@ -132,6 +138,8 @@ def get_analyses(report_id: str, test_id: str, db: Session = Depends(get_db)):
 
 def get_test_code(test):
     stacktrace = test.stacktrace
+    if stacktrace is None:
+        return None
     file_name = extract_file_name_from_stacktrace(stacktrace)
     if not file_name:
         raise HTTPException(status_code=404, detail="file name not found")

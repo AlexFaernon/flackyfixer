@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import Report, Test, Analysis
+from db_models import Report, Test, Analysis
 from test_result_parser import ParsedTest
 
 def create_report(db: Session, name: str) -> Report:
@@ -44,8 +44,11 @@ def get_reports(db: Session) -> list[Report]:
 def get_tests_in_report(report_id: str, db: Session) -> list[Test]:
     return db.query(Test).filter_by(report_id=report_id).all()
 
+def get_report_name(report_id: str, db: Session) -> str:
+    return db.query(Report).filter_by(id=report_id).first().name
+
 def get_test(report_id: str, test_id: str, db: Session) -> Test:
-    return db.query(Test).filter_by(report_id=report_id, external_id=test_id).first()
+    return db.query(Test).filter_by(report_id=report_id, id=test_id).first()
 
 
 def get_analysis_from_db(db: Session, report_id: str, test_id: str):
